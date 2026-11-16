@@ -1,0 +1,9 @@
+streamlit>=1.52
+pandas
+numpy
+pymupdf
+pdfplumber
+openpyxl
+opencv-python-headless
+pytesseract
+reportlab

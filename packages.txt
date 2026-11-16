@@ -1,0 +1,7 @@
+tesseract-ocr
+tesseract-ocr-vie
+libreoffice
+fonts-liberation
+fonts-dejavu
+fonts-crosextra-carlito
+fonts-crosextra-caladea
