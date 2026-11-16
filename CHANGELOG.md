@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-11-16 (đêm) – Giao diện nổi bật hơn
+**Thêm:** `style.py` (biểu ngữ xanh đậm có đường cam, thẻ tab lớn đổi màu khi chọn, khung tải file nét đứt xanh, nút chính màu cam, nút tải màu xanh lá, hộp thông báo có màu theo loại); `.streamlit/config.toml` đặt bảng màu (chữ xanh đen, nền xanh nhạt, nút cam).
+**Ảnh hưởng:** chỉ đổi giao diện, không đổi chức năng.
+
 ## 2026-11-16 (đêm) – Giai đoạn 4: Word/Excel → PDF (R12, R13, R3)
 **Thêm:** `office_to_pdf.py` (LibreOffice headless, hồ sơ riêng mỗi lần chạy nên nhiều người dùng cùng lúc không tranh khóa; kiểm tra font nhúng và đối chiếu chữ có dấu với file gốc), `ui_office.py` (xem trước ảnh trang, báo font, tải PDF); `app.py` chia hai tab lớn: "PDF → Word / Excel, tách trang" và "Word / Excel → PDF"; `packages.txt` thêm fonts-liberation, fonts-dejavu, fonts-crosextra-carlito/caladea; README thêm bước cài LibreOffice.
 **Sửa:** PDF tạo từ Word có font thiếu dấu Việt (Cambria) làm pdfplumber đọc ra `(cid:N)` → đọc lại vùng đó bằng PyMuPDF.

@@ -10,13 +10,15 @@ import streamlit as st
 import log_utils
 import ocr_utils as ou
 import ui_split
+import style
 import ui_office
 import pdf_to_excel as pe
 import pdf_to_word as pw
 import validators as vd
 
 st.set_page_config(page_title="Chuyển đổi PDF", page_icon="📄", layout="wide")
-st.title("Công cụ PDF")
+style.inject()
+style.banner()
 
 KIND_TEXT = {"text": "PDF có lớp chữ (trích trực tiếp, không cần OCR)",
              "scan": "PDF scan/ảnh chụp (dùng OCR Tesseract vie+eng)",
@@ -155,7 +157,7 @@ def pdf_side():
         page_excel()
 
 
-tab_from, tab_to = st.tabs(["PDF → Word / Excel, tách trang", "Word / Excel → PDF"])
+tab_from, tab_to = st.tabs(["📄 PDF → Word / Excel, tách trang", "🖨 Word / Excel → PDF"])
 with tab_to:
     ui_office.render(secret)
 with tab_from:
