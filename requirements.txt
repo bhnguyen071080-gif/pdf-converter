@@ -7,3 +7,5 @@ openpyxl
 opencv-python-headless
 pytesseract
 reportlab
+python-docx
+pillow

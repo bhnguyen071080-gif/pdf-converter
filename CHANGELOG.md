@@ -5,6 +5,7 @@
 **Sửa:** PDF tạo từ Word có font thiếu dấu Việt (Cambria) làm pdfplumber đọc ra `(cid:N)` → đọc lại vùng đó bằng PyMuPDF.
 **Hạn chế:** font gốc thiếu glyph tiếng Việt (Cambria) bị thay bằng DejaVu, app cảnh báo; chữ thay thế làm lớp chữ bị tách rời khi đọc lại.
 **Ảnh hưởng:** hồi quy 12/12 đạt (thêm 2 bài); các chức năng cũ không đổi.
+**Sửa khi đưa lên Streamlit Cloud:** `requirements.txt` thiếu `python-docx` và `pillow` → thêm (lỗi ModuleNotFoundError khi chạy online).
 
 ## 2026-11-16 (tối) – Giai đoạn 3: PDF → Word + R22 (dấu, chữ ký là ảnh)
 **Thêm:** `pdf_to_word.py` (đoạn, tab nhiều cột, căn giữa, bảng có ô gộp và độ rộng cột, ảnh dấu/chữ ký nổi đúng vị trí); `mark_utils.py` (tách dấu đỏ, chữ ký xanh/đen thành PNG nền trong suốt); `app.py`: tab "PDF → Excel / Word", xem trước ảnh dấu/chữ ký có ô "Giữ", nút "Tạo file Word".
