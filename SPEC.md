@@ -13,7 +13,7 @@ Nguồn chuẩn duy nhất. Trạng thái: Đạt / Chưa làm / Hỏng (cập n
 | R6 | Luôn có bước "Xem trước kết quả" trước khi tải | Đạt (cho PDF→Excel) |
 | R7 | Tự nhận biết PDF có lớp chữ hay PDF scan, và báo cho người dùng | Đạt |
 | R8 | Nhật ký thao tác (tên file, thời gian, loại, kết quả) vào bảng Supabase `pdf_tool_log` | Đạt khi đã khai báo SUPABASE_URL và SUPABASE_KEY (khóa publishable); đã thử ghi bằng quyền ẩn danh |
-| R9 | Chạy được trên Windows và triển khai Streamlit Community Cloud + GitHub | Chưa làm |
+| R9 | Chạy được trên Windows và triển khai Streamlit Community Cloud + GitHub | Online: Đạt (16/11, kho GitHub công khai `bhnguyen071080-gif/pdf-converter`, app Streamlit Cloud, khóa Supabase đặt trong Secrets). Windows: có hướng dẫn README, chưa thử trên máy thật |
 
 ## Chức năng
 | Mã | Yêu cầu | Trạng thái |
