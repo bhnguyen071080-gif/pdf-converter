@@ -64,6 +64,33 @@ h3 {{ border-left: 6px solid {ORANGE}; padding-left: .6rem; }}
 [data-testid="stImage"] img {{ border: 1px solid #B7C8E2; border-radius: 6px; box-shadow: 0 2px 6px rgba(11,37,69,.12); }}
 [data-testid="stProgress"] > div > div > div {{ background-color: {ORANGE}; }}
 hr {{ border-color: #C5D5EC; }}
+/* ===== lưới tách trang mô phỏng ===== */
+[data-testid="stHorizontalBlock"]:has(.splitrow) {{ gap: 0 !important; align-items: stretch !important; margin-bottom: 1.2rem; }}
+[data-testid="stColumn"]:has(.sp) {{ padding: .6rem .5rem .3rem; }}
+[data-testid="stColumn"]:has(.sp-g0) {{ background: #D6E6FF; }}
+[data-testid="stColumn"]:has(.sp-g1) {{ background: #D5F2E2; }}
+[data-testid="stColumn"]:has(.sp-g2) {{ background: #FFE9C2; }}
+[data-testid="stColumn"]:has(.sp-g3) {{ background: #EBDDFA; }}
+[data-testid="stColumn"]:has(.sp-g4) {{ background: #FFD9D9; }}
+[data-testid="stColumn"]:has(.sp-g5) {{ background: #CFF1F7; }}
+[data-testid="stColumn"]:has(.sp-g6) {{ background: #FAD7E8; }}
+[data-testid="stColumn"]:has(.sp-g7) {{ background: #E6F3C8; }}
+[data-testid="stElementContainer"]:has(.sp, .sep, .splitrow) {{ display: none; }}
+[data-testid="stColumn"]:has(.sep) {{ display: flex; align-items: center; justify-content: center;
+  background-repeat: no-repeat; background-position: center; padding: 0 !important; }}
+[data-testid="stColumn"]:has(.sep) > div {{ width: auto !important; justify-content: center; align-items: center; }}
+[data-testid="stColumn"]:has(.sep-on) {{ background-image: linear-gradient(to right, {NAVY}, {NAVY});
+  background-size: 4px 100%; background-color: transparent !important; }}
+[data-testid="stColumn"]:has(.sep-off) {{ background-image: repeating-linear-gradient(to bottom, #6F8FC4 0 7px, transparent 7px 14px);
+  background-size: 2px 100%; }}
+[data-testid="stColumn"]:has(.sep) button {{ width: 34px; height: 34px; min-height: 34px; padding: 0; border-radius: 50%;
+  font-size: 1rem; line-height: 1; }}
+[data-testid="stColumn"]:has(.sep-off) button {{ background: #fff; border: 2px solid #6F8FC4; color: #3C5A94; }}
+[data-testid="stColumn"]:has(.sep-off) button:hover {{ background: {BLUE}; border-color: {BLUE}; color: #fff; }}
+[data-testid="stColumn"]:has(.sep-on) button {{ background: {NAVY}; border: 2px solid {NAVY}; color: #fff;
+  box-shadow: 0 0 0 4px rgba(11,37,69,.18); }}
+[data-testid="stColumn"]:has(.sep-on) button:hover {{ background: {ORANGE}; border-color: {ORANGE}; }}
+.simhead {{ border-left: 8px solid {BLUE}; background: #fff; padding: .25rem .7rem; margin: .5rem 0 .3rem; border-radius: 0 8px 8px 0; }}
 </style>
 """
 

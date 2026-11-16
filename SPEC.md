@@ -23,7 +23,7 @@ Nguồn chuẩn duy nhất. Trạng thái: Đạt / Chưa làm / Hỏng (cập n
 | R12 | Word → PDF (LibreOffice headless) | Đạt (.docx/.doc/.odt/.rtf; có xem trước; kiểm đủ dấu Việt) |
 | R13 | Excel → PDF (LibreOffice headless) | Đạt (.xlsx/.xls/.ods/.csv; cột hẹp có thể hiện ### như Excel; chưa có tùy chọn vừa khổ giấy) |
 | R14 | Giữ bố cục bảng, canh lề; số liệu là số; ngày dd/mm/yyyy | Đạt |
-| R15 | Tách trang: ảnh thu nhỏ theo hàng, "đường ngắt" bật/tắt giữa hai trang, tô màu nhóm | Đạt (ảnh thu nhỏ theo hàng, nút ✂ bật/tắt, tô màu từng file) |
+| R15 | Tách trang: ảnh thu nhỏ theo hàng, "đường ngắt" bật/tắt giữa hai trang, tô màu nhóm | Đạt (ảnh thu nhỏ theo hàng; dải nền màu từng file; đường cắt nét liền/nét đứt + nút tròn ✂; mô phỏng kết quả sau khi cắt) |
 | R16 | Nút nhanh: tách từng trang / theo nhóm N trang / nhập dải trang (1-3, 4, 5-8) | Đạt (3 nút nhanh + gộp 1 file) |
 | R17 | Xem trước danh sách file sẽ tạo (tên, số trang); nhiều file nén .zip; tên sửa được | Đạt (xem trước danh sách, sửa tên, tự thêm .pdf/chống trùng, nhiều file nén .zip) |
 | R18 | Xoay trang, xóa trang, sắp xếp lại thứ tự trang | Đạt (xoay, xóa, khôi phục, dời trang; dời bằng nút, chưa kéo-thả) |

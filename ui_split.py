@@ -92,11 +92,16 @@ def render(pdf_bytes: bytes, file_name: str, on_log=None):
             gid_of[pos] = gi
 
     # ------------------------------------------------ lưới ảnh thu nhỏ + đường ngắt (R15)
-    st.markdown(f"**{n} trang → {len(groups)} file.** Mỗi màu là một file.")
+    # Mô phỏng như công cụ tách PDF trực quan: mỗi file là một dải nền màu liền nhau;
+    # giữa hai trang là đường dọc - nét LIỀN đậm + nút ✂ tròn đặc = ĐANG CẮT, nét đứt nhạt = chưa cắt.
+    st.markdown(f"**{n} trang → {len(groups)} file** · {len(brk)} điểm cắt. "
+                "Bấm nút tròn giữa hai trang để cắt / bỏ cắt.")
     thumbs = S[k("thumbs")]
     rot = S[k("rot")]
     for start in range(0, n, PER_ROW):
-        cols = st.columns([5, 1] * PER_ROW)
+        cols = st.columns([5, 1.2] * PER_ROW)
+        with cols[0]:
+            st.markdown('<span class="splitrow"></span>', unsafe_allow_html=True)
         for j in range(PER_ROW):
             pos = start + j
             if pos >= n:
@@ -104,18 +109,34 @@ def render(pdf_bytes: bytes, file_name: str, on_log=None):
             gi = gid_of[pos]
             col = pv.group_color(gi)
             with cols[2 * j]:
-                st.markdown(pv.color_bar(col, f"File {gi + 1}"), unsafe_allow_html=True)
+                st.markdown(f'<span class="sp sp-g{gi % 8}"></span>', unsafe_allow_html=True)
+                first = pos == groups[gi][0]
+                st.markdown(pv.color_bar(col, f"File {gi + 1}" if first else "·"), unsafe_allow_html=True)
                 st.image(pv.rotated_png(thumbs[order[pos]], rot.get(order[pos], 0)), width="stretch")
                 st.caption(f"Trang {pos + 1}" + (f" (gốc {order[pos] + 1})" if order[pos] != pos else ""))
             if pos < n - 1:
+                on = pos in brk
                 with cols[2 * j + 1]:
-                    st.write("")
-                    st.write("")
-                    on = pos in brk
-                    if st.button("✂" if on else "┆", key=k(f"b{pos}"), type="primary" if on else "secondary",
-                                 help="Đang NGẮT ở đây – bấm để bỏ" if on else "Bấm để ngắt ở đây"):
+                    st.markdown('<span class="sep sep-on"></span>' if on
+                                else f'<span class="sep sep-off sp-g{gi % 8}"></span>', unsafe_allow_html=True)
+                    if st.button("✂", key=k(f"b{pos}"), type="primary" if on else "secondary",
+                                 help="Đang CẮT ở đây – bấm để bỏ" if on else "Bấm để cắt ở đây"):
                         S[k("brk")] = (brk - {pos}) if on else (brk | {pos})
                         st.rerun()
+
+    # ------------------------------------------------ mô phỏng kết quả sau khi cắt
+    with st.expander(f"Mô phỏng kết quả sau khi cắt ({len(groups)} file)", expanded=True):
+        for gi, (ga, gb) in enumerate(groups):
+            col = pv.group_color(gi)
+            st.markdown(f'<div class="simhead" style="border-left-color:{col}"><b>File {gi + 1}</b> · '
+                        f'{gb - ga + 1} trang (trang {ga + 1}' + (f"–{gb + 1}" if gb > ga else "") + ")</div>",
+                        unsafe_allow_html=True)
+            show = list(range(ga, min(gb, ga + 11) + 1))
+            sc = st.columns(12)
+            for ci, pos in enumerate(show):
+                sc[ci].image(pv.rotated_png(thumbs[order[pos]], rot.get(order[pos], 0)), width="stretch")
+            if gb - ga + 1 > 12:
+                sc[11].caption(f"… +{gb - ga - 10}")
 
     # ------------------------------------------------ xoay / xóa / sắp xếp (R18)
     with st.expander("Xoay, xóa, sắp xếp lại trang"):
@@ -160,7 +181,7 @@ def render(pdf_bytes: bytes, file_name: str, on_log=None):
                             disabled=["Số trang", "Trang (thứ tự hiện tại)"])
     st.caption("Bấm đúp vào cột 'Tên file' để đổi tên. Đuôi .pdf tự thêm; tên trùng tự thêm số.")
 
-    if st.button("Tạo file để tải", type="primary", key=k("make")):
+    if st.button(f"✂ Tách ({len(groups)} PDF) → tạo file để tải", type="primary", key=k("make")):
         used: set[str] = set()
         names = [sp.safe_name(str(x), used) for x in edited["Tên file"]]
         parts = sp.split_pdf(pdf_bytes, order, rot, groups)

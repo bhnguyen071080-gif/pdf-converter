@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-11-16 (đêm) – Lưới tách trang mô phỏng như công cụ mẫu (R15)
+**Thêm/sửa:** `ui_split.py` + `style.py`: mỗi file là một dải nền màu liền nhau (cùng màu với thanh "File n"); giữa hai trang là đường dọc – nét liền đậm kèm nút tròn ✂ đặc = đang cắt, nét đứt nhạt kèm nút tròn rỗng = chưa cắt; dòng tóm tắt "N trang → M file · K điểm cắt"; khối "Mô phỏng kết quả sau khi cắt" liệt kê từng file với ảnh thu nhỏ các trang; nút cuối ghi "Tách (M PDF) → tạo file để tải".
+**Ảnh hưởng:** logic tách không đổi; chỉ đổi cách hiển thị.
+
 ## 2026-11-16 (đêm) – Giao diện nổi bật hơn
 **Thêm:** `style.py` (biểu ngữ xanh đậm có đường cam, thẻ tab lớn đổi màu khi chọn, khung tải file nét đứt xanh, nút chính màu cam, nút tải màu xanh lá, hộp thông báo có màu theo loại); `.streamlit/config.toml` đặt bảng màu (chữ xanh đen, nền xanh nhạt, nút cam).
 **Ảnh hưởng:** chỉ đổi giao diện, không đổi chức năng.
