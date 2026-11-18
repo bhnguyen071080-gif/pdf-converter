@@ -4,6 +4,7 @@
 **Sửa:** `pdf_to_excel.py`: `convert_pdf` xử lý nhiều trang song song (tối đa 4 trang cùng lúc, theo số nhân CPU), dựng ảnh trang ở luồng chính vì PyMuPDF không an toàn đa luồng; thanh tiến trình ghi "Xong trang n – x/y". `process_scan_page` nhận thêm ảnh dựng sẵn.
 **Đo thử:** file mẫu 8 trang scan, máy 2 nhân: 146 giây → 108 giây (-26%); nội dung 8/8 trang giống hệt bản trước. Máy nhiều nhân hơn sẽ nhanh hơn nữa.
 **Đã thử và KHÔNG áp dụng:** thay khử nhiễu fastNlMeans bằng medianBlur (-3 giây/trang) và dò độ nghiêng trên ảnh thu nhỏ (-4 giây/trang): nhanh hơn nhưng làm đổi nội dung đọc được ở 6–7/8 trang, chưa có căn cứ là tốt hơn hay kém hơn.
+**Sửa lỗi:** bản đẩy lên lúc đầu làm mất định nghĩa `_NUM`, `_DATE` (lỗi NameError khi tạo file Excel); đã khôi phục ngay trong lần đẩy kế tiếp.
 **Ảnh hưởng:** chỉ tốc độ; hồi quy đạt toàn bộ.
 
 ## 2026-11-18 – Chọn file cần tải, chuyển Word/Excel theo nhóm (R23, R24)

@@ -321,6 +321,10 @@ def convert_pdf(pdf_bytes: bytes, pages: list[int] | None = None, progress=None,
     return kind, [results[i] for i in pages]
 
 
+# ---------------------------------------------------------------- kiểu dữ liệu: số, ngày
+_NUM = re.compile(r"^-?\d{1,3}(\.\d{3})+(,\d+)?$|^-?\d+(,\d+)?$|^-?\d+\.\d+$")
+_DATE = re.compile(r"^(\d{1,2})/(\d{1,2})/(\d{4})$")
+
 def parse_number(s: str):
     s = s.strip()
     if not _NUM.match(s):
