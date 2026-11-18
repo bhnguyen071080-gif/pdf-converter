@@ -199,3 +199,25 @@ def breaks_repeating_set(order: list[int], tops: dict[int, str]) -> set[int]:
         if pos > 0 and k and difflib.SequenceMatcher(None, k, lead).ratio() >= 0.75:
             out.add(pos - 1)
     return out
+
+
+def selected_pages(groups: list[tuple[int, int]], order: list[int], flags: list[bool]) -> list[int]:
+    """Chỉ số trang GỐC (từ 0) của các nhóm được tích chọn, theo thứ tự trang gốc tăng dần (R23, R24)."""
+    out: set[int] = set()
+    for (a, b), on in zip(groups, flags):
+        if on:
+            out.update(order[a:b + 1])
+    return sorted(out)
+
+
+def pages_to_range_text(pages: list[int]) -> str:
+    """[0,1,2,4] -> '1-3, 5' (số trang từ 1) để điền vào ô 'Trang cần chuyển'."""
+    parts, i = [], 0
+    ps = sorted(set(pages))
+    while i < len(ps):
+        j = i
+        while j + 1 < len(ps) and ps[j + 1] == ps[j] + 1:
+            j += 1
+        parts.append(str(ps[i] + 1) if i == j else f"{ps[i] + 1}-{ps[j] + 1}")
+        i = j + 1
+    return ", ".join(parts)

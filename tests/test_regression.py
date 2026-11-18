@@ -145,6 +145,18 @@ def test_splitter_output_rotate_delete_reorder_zip():
     assert z.namelist()[0] == names[0]                                          # tên tiếng Việt trong zip nguyên vẹn
 
 
+def test_select_groups_and_range_text():
+    import pdf_splitter as sp
+    import validators as vd
+    groups = [(0, 1), (2, 3), (4, 5)]
+    order = [0, 2, 1, 4, 5, 6]
+    assert sp.selected_pages(groups, order, [True, False, True]) == [0, 2, 5, 6]   # R23/R24: chỉ nhóm được tích
+    assert sp.selected_pages(groups, order, [False, False, False]) == []
+    assert sp.pages_to_range_text([0, 1, 2, 4, 7, 8]) == "1-3, 5, 8-9"
+    assert sp.pages_to_range_text([3]) == "4"
+    assert vd.parse_page_ranges(sp.pages_to_range_text([0, 1, 2, 4]), 10) == [0, 1, 2, 4]   # khứ hồi với ô nhập trang
+
+
 def test_title_key_fuzzy():
     import pdf_splitter as sp
     assert sp.title_key("CỘNG HÒA\nBIÊN BẢN KIỂM TRA\nXÁC ĐỊNH") == "KIEM TRA"

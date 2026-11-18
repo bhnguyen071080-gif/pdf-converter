@@ -42,3 +42,5 @@ Nhu cầu thực tế từ ảnh: một file scan 16 trang gồm nhiều biên b
 | R20 | Gợi ý điểm ngắt tự động: OCR phần đầu mỗi trang, nơi có tiêu đề "BIÊN BẢN…" hoặc mã mẫu "BM:…" thì đề xuất ngắt trước trang đó; người dùng bấm sửa lại | Đạt (thử nghiệm): 2 chế độ gợi ý – A mỗi biên bản một file, B theo bộ hồ sơ lặp lại |
 | R21 | (chưa được đồng ý) Tên file khi tách gợi ý theo tiêu đề biên bản + ngày đọc được; người dùng sửa được | Đề xuất |
 | R22 | Con dấu, chữ ký giữ nguyên dạng ảnh (không OCR) trong Word và Excel; xem trước, bỏ chọn được | Đạt thử nghiệm. Hạn chế: chữ ký dính sát chữ in (vd. "KTVTAT") có thể không tách được |
+| R23 | Chọn file cần tải: cột tích "Tải" trong bảng "Danh sách file sẽ tạo"; file không tích thì không tạo, không có trong .zip | Đạt (18/11, thử bằng AppTest: tích file 1, 3, 6 → zip đúng 3 file) |
+| R24 | Chuyển Word/Excel theo nhóm đã tích: nút điền sẵn ô "Trang cần chuyển" bằng các trang của nhóm đã tích | Đạt (18/11). Hạn chế: chuyển gộp thành một file Word/Excel, chưa tách mỗi nhóm một file; chuyển theo trang gốc, không áp dụng xoay trang |

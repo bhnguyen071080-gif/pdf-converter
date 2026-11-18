@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-11-18 – Chọn file cần tải, chuyển Word/Excel theo nhóm (R23, R24)
+**Thêm:** `ui_split.py`: cột tích "Tải" trong bảng "Danh sách file sẽ tạo" (bỏ tích thì file không được tạo và không có trong .zip; nút ghi "Tách (x/y PDF đã tích)"); mục "Chuyển các file đã tích sang Word / Excel" điền sẵn ô "Trang cần chuyển". `pdf_splitter.py`: `selected_pages`, `pages_to_range_text`. `app.py`: ô "Trang cần chuyển" có khóa riêng theo tên file để được điền sẵn. `tests`: thêm `test_select_groups_and_range_text`.
+**Ảnh hưởng:** logic tách và các chức năng cũ không đổi; hồi quy đạt toàn bộ bài hiện có (bài dùng file mẫu thiếu thì bỏ qua như trước).
+
 ## 2026-11-16 (đêm) – Lưới tách trang mô phỏng như công cụ mẫu (R15)
 **Thêm/sửa:** `ui_split.py` + `style.py`: mỗi file là một dải nền màu liền nhau (cùng màu với thanh "File n"); giữa hai trang là đường dọc – nét liền đậm kèm nút tròn ✂ đặc = đang cắt, nét đứt nhạt kèm nút tròn rỗng = chưa cắt; dòng tóm tắt "N trang → M file · K điểm cắt"; khối "Mô phỏng kết quả sau khi cắt" liệt kê từng file với ảnh thu nhỏ các trang; nút cuối ghi "Tách (M PDF) → tạo file để tải".
 **Ảnh hưởng:** logic tách không đổi; chỉ đổi cách hiển thị.

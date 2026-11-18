@@ -55,7 +55,8 @@ def pdf_side():
         # ---- Tùy chọn (R10, R19)
         c1, c2, c3 = st.columns([2, 2, 2])
         with c1:
-            page_text = st.text_input("Trang cần chuyển (để trống = tất cả)", placeholder="Ví dụ: 1-3, 5, 8-")
+            page_text = st.text_input("Trang cần chuyển (để trống = tất cả)", placeholder="Ví dụ: 1-3, 5, 8-",
+                                      key=f"pages_text:{up.name}")
         with c2:
             mode = st.radio("Cách xuất Excel", ["Mỗi trang một sheet", "Gộp tất cả vào một sheet"], horizontal=False)
         with c3:

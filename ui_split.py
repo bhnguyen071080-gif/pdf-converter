@@ -169,32 +169,55 @@ def render(pdf_bytes: bytes, file_name: str, on_log=None):
                 S[k("brk")] = set()
                 st.rerun()
 
-    # ------------------------------------------------ xem trước danh sách file (R17)
+    # ------------------------------------------------ xem trước danh sách file (R17) + chọn nhóm cần tải (R23)
     st.subheader("Danh sách file sẽ tạo")
     sig = hashlib.md5(repr((groups, order)).encode()).hexdigest()[:8]
     df = pd.DataFrame({
+        "Tải": [True] * len(groups),
         "Tên file": [f"{base}_{gi + 1:02d}" for gi in range(len(groups))],
         "Số trang": [b - a + 1 for a, b in groups],
         "Trang (thứ tự hiện tại)": [f"{a + 1}" if a == b else f"{a + 1}–{b + 1}" for a, b in groups],
     })
     edited = st.data_editor(df, key=k(f"ed{sig}"), hide_index=True, width="stretch",
-                            disabled=["Số trang", "Trang (thứ tự hiện tại)"])
-    st.caption("Bấm đúp vào cột 'Tên file' để đổi tên. Đuôi .pdf tự thêm; tên trùng tự thêm số.")
+                            disabled=["Số trang", "Trang (thứ tự hiện tại)"],
+                            column_config={"Tải": st.column_config.CheckboxColumn(
+                                "Tải", help="Bỏ tích những file không cần: sẽ không được tạo, không có trong file tải về.",
+                                default=True)})
+    flags = [bool(x) for x in edited["Tải"]]
+    chosen = [gi for gi, on in enumerate(flags) if on]
+    st.caption("Bỏ tích cột 'Tải' ở file không cần. Bấm đúp vào cột 'Tên file' để đổi tên. "
+               "Đuôi .pdf tự thêm; tên trùng tự thêm số.")
+    sel_sig = sig + "".join("1" if f else "0" for f in flags)
 
-    if st.button(f"✂ Tách ({len(groups)} PDF) → tạo file để tải", type="primary", key=k("make")):
+    if not chosen:
+        st.warning("Chưa tích file nào để tải.")
+    elif st.button(f"✂ Tách ({len(chosen)}/{len(groups)} PDF đã tích) → tạo file để tải", type="primary", key=k("make")):
         used: set[str] = set()
         names = [sp.safe_name(str(x), used) for x in edited["Tên file"]]
-        parts = sp.split_pdf(pdf_bytes, order, rot, groups)
-        files = [(nm, data) for nm, (data, _) in zip(names, parts)]
+        parts = sp.split_pdf(pdf_bytes, order, rot, [groups[gi] for gi in chosen])
+        files = [(names[gi], data) for gi, (data, _) in zip(chosen, parts)]
         if len(files) == 1:
-            S[k("out")] = (files[0][0], files[0][1], "application/pdf", sig)
+            S[k("out")] = (files[0][0], files[0][1], "application/pdf", sel_sig)
         else:
-            S[k("out")] = (f"{base}_tach.zip", sp.make_zip(files), "application/zip", sig)
+            S[k("out")] = (f"{base}_tach.zip", sp.make_zip(files), "application/zip", sel_sig)
         if on_log:
             on_log("split_pdf", len(order), len(files))
     out = S.get(k("out"))
-    if out and out[3] != sig:
-        st.caption("Bạn vừa đổi cách tách – bấm 'Tạo file để tải' lại.")
+    if out and out[3] != sel_sig:
+        st.caption("Bạn vừa đổi cách tách hoặc đổi ô tích 'Tải' – bấm 'Tạo file để tải' lại.")
     elif out:
         st.download_button(f"⬇️ Tải {out[0]} ({len(out[1]) / 1e6:.1f} MB)", out[1], file_name=out[0], mime=out[2],
                            key=k("dl"))
+
+    # ------------------------------------------------ chuyển các nhóm đã tích sang Word / Excel (R24)
+    st.subheader("Chuyển các file đã tích sang Word / Excel")
+    pages = sp.selected_pages(groups, order, flags)
+    if pages:
+        txt = sp.pages_to_range_text(pages)
+        st.caption(f"Sẽ chuyển {len(pages)} trang gốc: {txt}")
+        if st.button("➡ Dùng các trang này để chuyển Word / Excel", key=k("toconv")):
+            S[f"pages_text:{file_name}"] = txt
+            st.success("Đã điền ô 'Trang cần chuyển'. Bấm sang thẻ **📊 PDF → Excel / Word** rồi bấm "
+                       "'Chuyển đổi và xem trước'.")
+    else:
+        st.caption("Tích ít nhất một file ở bảng trên.")
