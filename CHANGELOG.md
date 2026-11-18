@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-11-18 – Tăng tốc PDF → Excel/Word (không đổi kết quả)
+**Sửa:** `pdf_to_excel.py`: `convert_pdf` xử lý nhiều trang song song (tối đa 4 trang cùng lúc, theo số nhân CPU), dựng ảnh trang ở luồng chính vì PyMuPDF không an toàn đa luồng; thanh tiến trình ghi "Xong trang n – x/y". `process_scan_page` nhận thêm ảnh dựng sẵn.
+**Đo thử:** file mẫu 8 trang scan, máy 2 nhân: 146 giây → 108 giây (-26%); nội dung 8/8 trang giống hệt bản trước. Máy nhiều nhân hơn sẽ nhanh hơn nữa.
+**Đã thử và KHÔNG áp dụng:** thay khử nhiễu fastNlMeans bằng medianBlur (-3 giây/trang) và dò độ nghiêng trên ảnh thu nhỏ (-4 giây/trang): nhanh hơn nhưng làm đổi nội dung đọc được ở 6–7/8 trang, chưa có căn cứ là tốt hơn hay kém hơn.
+**Ảnh hưởng:** chỉ tốc độ; hồi quy đạt toàn bộ.
+
 ## 2026-11-18 – Chọn file cần tải, chuyển Word/Excel theo nhóm (R23, R24)
 **Thêm:** `ui_split.py`: cột tích "Tải" trong bảng "Danh sách file sẽ tạo" (bỏ tích thì file không được tạo và không có trong .zip; nút ghi "Tách (x/y PDF đã tích)"); mục "Chuyển các file đã tích sang Word / Excel" điền sẵn ô "Trang cần chuyển". `pdf_splitter.py`: `selected_pages`, `pages_to_range_text`. `app.py`: ô "Trang cần chuyển" có khóa riêng theo tên file để được điền sẵn. `tests`: thêm `test_select_groups_and_range_text`.
 **Ảnh hưởng:** logic tách và các chức năng cũ không đổi; hồi quy đạt toàn bộ bài hiện có (bài dùng file mẫu thiếu thì bỏ qua như trước).

@@ -8,6 +8,9 @@ Mô hình dữ liệu trung gian (dùng chung cho xem trước và xuất xlsx):
 """
 from __future__ import annotations
 
+import os
+import time
+
 import io
 import re
 from concurrent.futures import ThreadPoolExecutor
@@ -193,8 +196,10 @@ def extract_table_scan(gray, region, hmask, vmask, pool) -> dict | None:
 
 
 # ---------------------------------------------------------------- xử lý trang scan
-def process_scan_page(page, pool, dpi: int = 300) -> dict:
-    img = ou.render_page(page, dpi)
+def process_scan_page(page, pool, dpi: int = 300, img=None) -> dict:
+    """img: ảnh trang đã dựng sẵn (dùng khi xử lý song song; dựng ảnh phải làm ở luồng chính vì PyMuPDF không an toàn đa luồng)."""
+    if img is None:
+        img = ou.render_page(page, dpi)
     img, binary, angle = ou.preprocess(img)
     gray = ou.gray_of(img)
     hmask, vmask = _line_masks(binary)  # cấu trúc bảng dò trên ảnh nhị phân
@@ -283,27 +288,37 @@ def process_text_page(page_idx: int, pdf_bytes: bytes, scale: float = 300 / 72) 
 
 
 # ---------------------------------------------------------------- điều phối
+def _page_workers() -> int:
+    """Số trang xử lý cùng lúc: theo số nhân CPU, tối đa 4 (máy chủ miễn phí thường 2 nhân)."""
+    return max(1, min(4, os.cpu_count() or 2))
+
+
 def convert_pdf(pdf_bytes: bytes, pages: list[int] | None = None, progress=None, force_ocr: bool = False):
-    """Trả (kind, [PageResult]). pages: chỉ số trang từ 0; None = tất cả."""
+    """Trả (kind, [PageResult]). pages: chỉ số trang từ 0; None = tất cả.
+    Các trang xử lý song song (kết quả vẫn đúng thứ tự trang); thuật toán từng trang không đổi."""
     doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
     kind = ou.detect_pdf_kind(doc)
     pages = list(range(len(doc))) if pages is None else pages
-    results = []
-    with ThreadPoolExecutor(max_workers=4) as pool:
-        for n, i in enumerate(pages):
-            page = doc[i]
-            use_text = (not force_ocr) and ou.page_has_text_layer(page)
-            res = process_text_page(i, pdf_bytes) if use_text else process_scan_page(page, pool)
+    use_text = {i: (not force_ocr) and ou.page_has_text_layer(doc[i]) for i in pages}
+    results: dict[int, dict] = {}
+    done = 0
+    with ThreadPoolExecutor(max_workers=4) as cell_pool, ThreadPoolExecutor(max_workers=_page_workers()) as page_pool:
+        futs = {}
+        for i in pages:
+            if use_text[i]:
+                futs[i] = page_pool.submit(process_text_page, i, pdf_bytes)
+            else:  # dựng ảnh ở luồng chính, phần nặng (khử nghiêng, OCR) chạy song song
+                futs[i] = page_pool.submit(process_scan_page, None, cell_pool, 300, ou.render_page(doc[i], 300))
+            while len([f for f in futs.values() if not f.done()]) >= _page_workers() + 1:
+                time.sleep(0.05)  # giới hạn số ảnh lớn nằm chờ trong bộ nhớ
+        for i in pages:
+            res = futs[i].result()
             res["page"] = i + 1
-            results.append(res)
+            results[i] = res
+            done += 1
             if progress:
-                progress((n + 1) / len(pages), f"Trang {i + 1} ({'lớp chữ' if use_text else 'OCR'})")
-    return kind, results
-
-
-# ---------------------------------------------------------------- kiểu dữ liệu: số, ngày
-_NUM = re.compile(r"^-?\d{1,3}(\.\d{3})+(,\d+)?$|^-?\d+(,\d+)?$|^-?\d+\.\d+$")
-_DATE = re.compile(r"^(\d{1,2})/(\d{1,2})/(\d{4})$")
+                progress(done / len(pages), f"Xong trang {i + 1} ({'lớp chữ' if use_text[i] else 'OCR'}) – {done}/{len(pages)}")
+    return kind, [results[i] for i in pages]
 
 
 def parse_number(s: str):
