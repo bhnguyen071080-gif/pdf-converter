@@ -50,7 +50,7 @@ def render(pdf_bytes: bytes, file_name: str, on_log=None):
         if st.button("Gộp thành 1 file", key=k("none")):
             S[k("brk")] = set()
     with c2:
-        grp = st.number_input("Số trang mỗi nhóm", 1, max(1, n), 2, key=k("grp"))
+        grp = st.number_input("Số trang mỗi nhóm", 1, max(1, n), min(2, max(1, n)), key=k("grp"))
         if st.button("Tách theo nhóm N trang", key=k("every")):
             S[k("brk")] = sp.breaks_every(int(grp), n)
     with c3:
