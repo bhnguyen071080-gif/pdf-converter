@@ -22,3 +22,14 @@ Model tiếng Việt chất lượng cao nằm sẵn trong thư mục `tessdata/
 
 ## C. Chạy kiểm tra
 `python tests/test_regression.py`
+
+## D. Dịch tài liệu (tab "🌐 Dịch tài liệu")
+1. Chọn file PDF ở tab "📄 PDF → Word / Excel, tách trang", rồi bấm thẻ **🌐 Dịch tài liệu**.
+2. Chọn "Ngôn ngữ của tài liệu (gốc)" và "Dịch sang". Muốn dịch một vài trang thì gõ vào ô "Trang cần dịch" (vd. 1-3, 5).
+3. (Tùy chọn) Nhập email của bạn để MyMemory nâng hạn mức từ 5.000 lên 50.000 ký tự/ngày.
+4. (Tùy chọn) Mở "Từ điển thuật ngữ" để thêm thuật ngữ riêng, mỗi dòng `gốc = dịch`.
+5. Mở "Dịch thử một đoạn" và bấm **Dịch thử** để chắc dịch vụ đang chạy.
+6. Tích ô **"Tôi đồng ý gửi nội dung văn bản…"** (bắt buộc) rồi bấm **Dịch tài liệu**.
+7. Xem bảng Gốc / Bản dịch: sửa trực tiếp. Muốn dịch lại dòng nào thì sửa ô "Gốc", tích "Dịch lại", bấm nút "Dịch lại … dòng".
+8. Bấm **Tạo file Word** hoặc **Tạo file PDF và xem trước**, rồi bấm nút tải.
+Lưu ý: văn bản được gửi ra dịch vụ miễn phí trên Internet nên không dùng cho tài liệu mật. Chữ nằm trong hình vẽ không được dịch (giữ nguyên hình).

@@ -10,14 +10,64 @@ import numpy as np
 import pymupdf  # PyMuPDF
 import pytesseract
 
-LANG = "vie+eng"
+import contextvars
+import shutil
+import tempfile
+
+LANG = "vie+eng"  # mặc định (tiếng Việt)
 DPI = 300
+
+# Ngôn ngữ OCR theo từng luồng/yêu cầu (nhiều người dùng cùng lúc không đè nhau)
+_LANG = contextvars.ContextVar("ocr_lang", default=LANG)
+OCR_LANGS = {  # mã ngôn ngữ ứng dụng -> mã Tesseract
+    "vi": "vie+eng", "en": "eng", "de": "deu+eng", "ja": "jpn", "zh-CN": "chi_sim", "zh-TW": "chi_tra",
+}
+
+
+def set_lang(code: str):
+    """Đặt ngôn ngữ OCR ('vi','en','de','ja','zh-CN','zh-TW'); trả token để khôi phục."""
+    return _LANG.set(OCR_LANGS.get(code, code))
+
+
+def cur_lang() -> str:
+    return _LANG.get()
 
 # Dùng model Tesseract "best" đi kèm dự án (tessdata/) cho dấu tiếng Việt chính xác hơn
 # model "fast" cài theo apt. Nếu thiếu thư mục thì dùng model hệ thống.
 _TESS = Path(__file__).parent / "tessdata"
 if (_TESS / "vie.traineddata").exists():
     os.environ["TESSDATA_PREFIX"] = str(_TESS)
+
+_SYS_TESS = [Path(p) for p in ("/usr/share/tesseract-ocr/5/tessdata", "/usr/share/tesseract-ocr/4.00/tessdata",
+                               "/usr/share/tessdata", r"C:\Program Files\Tesseract-OCR\tessdata",
+                               r"C:\Program Files (x86)\Tesseract-OCR\tessdata")]
+_merged: dict[str, str] = {}
+
+
+def tessdata_dir(lang: str) -> str:
+    """Thư mục chứa đủ mọi model của `lang` (vd. 'deu+eng'): ưu tiên model 'best' đi kèm dự án,
+    thiếu thì lấy model hệ thống; ghép thành một thư mục tạm."""
+    if lang in _merged:
+        return _merged[lang]
+    parts = lang.split("+")
+    pool = [_TESS] + _SYS_TESS
+    found = {}
+    for p in parts:
+        for d in pool:
+            if (d / f"{p}.traineddata").exists():
+                found[p] = d / f"{p}.traineddata"
+                break
+    dirs = {f.parent for f in found.values()}
+    if len(found) == len(parts) and len(dirs) == 1:
+        out = str(dirs.pop())
+    else:
+        tmp = Path(tempfile.mkdtemp(prefix="tess_"))
+        for p, f in found.items():
+            shutil.copy(f, tmp / f.name)
+        out = str(tmp)
+    _merged[lang] = out
+    return out
+
 
 # Windows: tìm tesseract.exe ở nơi cài mặc định nếu chưa có trong PATH
 for _p in (r"C:\Program Files\Tesseract-OCR\tesseract.exe", r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe"):
@@ -147,7 +197,9 @@ def _group_lines(d: dict, scale: float) -> list[dict]:
 
 def _ocr_variant(img: np.ndarray, psm: int, scale: float, extra: str = "") -> list[dict]:
     cfg = f"--oem 1 --psm {psm} -c preserve_interword_spaces=1 {extra}"
-    d = pytesseract.image_to_data(img, lang=LANG, config=cfg, output_type=pytesseract.Output.DICT)
+    lang = cur_lang()
+    cfg += f' --tessdata-dir "{tessdata_dir(lang)}"'
+    d = pytesseract.image_to_data(img, lang=lang, config=cfg, output_type=pytesseract.Output.DICT)
     return _group_lines(d, scale)
 
 
@@ -208,7 +260,8 @@ def ocr_text(gray: np.ndarray, psm: int = 6, extra: str = "") -> str:
 def quick_text(gray: np.ndarray, psm: int = 6) -> str:
     """OCR nhanh một lần (không chọn biến thể) cho việc cần tốc độ, ví dụ đọc đầu trang."""
     g = make_variants(gray)[0]
-    return pytesseract.image_to_string(g, lang=LANG, config=f"--oem 1 --psm {psm}")
+    lang = cur_lang()
+    return pytesseract.image_to_string(g, lang=lang, config=f'--oem 1 --psm {psm} --tessdata-dir "{tessdata_dir(lang)}"')
 
 
 def ocr_digits(gray: np.ndarray) -> str:
@@ -217,10 +270,15 @@ def ocr_digits(gray: np.ndarray) -> str:
     return ocr_text(gray, psm=7, extra=extra) or ocr_text(gray, psm=10, extra=extra)  # psm 10 = một ký tự
 
 
+_CJK = "\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uff00-\uffef\u3000-\u303f"
+_CJK_GAP = re.compile(f"([{_CJK}]) +(?=[{_CJK}])")
+
+
 def clean_text(s: str) -> str:
     """Chuẩn hóa Unicode NFC, bỏ ký tự rác do OCR."""
     import unicodedata
     s = unicodedata.normalize("NFC", s)
     s = re.sub(r"[|¦]+", "", s)
     s = re.sub(r"[ \t]+", " ", s)
+    s = _CJK_GAP.sub(r"\1", s)  # Tesseract chèn khoảng trắng giữa các chữ Hán/Nhật
     return "\n".join(l.strip() for l in s.splitlines() if l.strip()).strip()

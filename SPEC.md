@@ -44,3 +44,14 @@ Nhu cầu thực tế từ ảnh: một file scan 16 trang gồm nhiều biên b
 | R22 | Con dấu, chữ ký giữ nguyên dạng ảnh (không OCR) trong Word và Excel; xem trước, bỏ chọn được | Đạt thử nghiệm. Hạn chế: chữ ký dính sát chữ in (vd. "KTVTAT") có thể không tách được |
 | R23 | Chọn file cần tải: cột tích "Tải" trong bảng "Danh sách file sẽ tạo"; file không tích thì không tạo, không có trong .zip | Đạt (18/11, thử bằng AppTest: tích file 1, 3, 6 → zip đúng 3 file) |
 | R24 | Chuyển Word/Excel theo nhóm đã tích: nút điền sẵn ô "Trang cần chuyển" bằng các trang của nhóm đã tích | Đạt (18/11). Hạn chế: chuyển gộp thành một file Word/Excel, chưa tách mỗi nhóm một file; chuyển theo trang gốc, không áp dụng xoay trang |
+
+## Bổ sung 19/11/2026 – Dịch tài liệu kỹ thuật thiết bị cảng biển (R25–R29)
+Yêu cầu của người dùng: có tài liệu chuyên ngành kỹ thuật thiết bị cảng biển bằng tiếng nước ngoài; cần chọn ngôn ngữ dịch, xuất PDF hoặc Word, và tái hiện hình ảnh như nguyên bản nếu làm được. Chỉ dùng dịch vụ MIỄN PHÍ.
+Xung đột với phần đã làm: không (OCR thêm tham số ngôn ngữ, mặc định vẫn `vie+eng`; luồng PDF→Excel/Word không đổi).
+| Mã | Yêu cầu | Trạng thái |
+|---|---|---|
+| R25 | Chọn ngôn ngữ gốc và ngôn ngữ đích: Việt, Anh, Đức, Nhật, Trung giản thể, Trung phồn thể; chọn trang cần dịch | Đạt (thử với dịch vụ giả; dịch vụ thật chỉ chạy được trên máy có Internet – kiểm khi chạy online) |
+| R26 | OCR đúng ngôn ngữ gốc (Tesseract eng/deu/jpn/chi_sim/chi_tra + vie, model "best" đi kèm dự án); trang có lớp chữ thì trích trực tiếp | Đạt. Hạn chế: tiếng Trung/Nhật đọc sai chữ lẻ ở chữ nhỏ → sửa ở cột "Gốc" rồi tích "Dịch lại" |
+| R27 | Dịch bằng dịch vụ miễn phí: MyMemory, hết hạn mức tự chuyển Google (web, không chính thức); từ điển thuật ngữ cảng biển Anh/Đức → Việt, người dùng bổ sung; bộ nhớ đệm; bắt buộc tích đồng ý gửi văn bản ra ngoài; nút "Dịch thử" | Đạt (logic). Hạn chế: chất lượng do dịch vụ quyết định; MyMemory ~5.000 ký tự/ngày (50.000 nếu nhập email) |
+| R28 | Giữ nguyên hình vẽ/ảnh: ảnh nhúng + bản vẽ vector (trang có lớp chữ), vùng hình (trang scan); chữ trong hình giữ nguyên, không dịch | Đạt (thử với PDF mẫu). Hạn chế: hình chèn thành ảnh nối theo dòng văn bản (không đặt đúng tọa độ tuyệt đối); con dấu/chữ ký không đưa vào bản dịch |
+| R29 | Xem trước và sửa bảng Gốc/Bản dịch trước khi xuất; xuất Word (.docx) hoặc PDF (qua LibreOffice) có xem trước trang; chữ Nhật/Trung dùng font Noto CJK | Đạt. Hạn chế: bố cục dựng lại theo dòng chảy văn bản (đoạn, bảng, hình), không giống từng điểm ảnh bản gốc |

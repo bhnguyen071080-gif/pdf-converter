@@ -12,6 +12,7 @@ import ocr_utils as ou
 import ui_split
 import style
 import ui_office
+import ui_translate
 import pdf_to_excel as pe
 import pdf_to_word as pw
 import validators as vd
@@ -148,7 +149,7 @@ def pdf_side():
                    "Con dấu, chữ ký giữ nguyên dạng ảnh; bỏ chọn 'Giữ' nếu không muốn đưa ảnh đó vào file.")
 
 
-    tab_split, tab_excel = st.tabs(["✂ Tách / sắp xếp trang", "📊 PDF → Excel / Word"])
+    tab_split, tab_excel, tab_tr = st.tabs(["✂ Tách / sắp xếp trang", "📊 PDF → Excel / Word", "🌐 Dịch tài liệu"])
     with tab_split:
         ui_split.render(pdf_bytes, up.name,
                         on_log=lambda action, pages, files: log_utils.write_log(
@@ -156,6 +157,8 @@ def pdf_side():
                             {"pages": pages}))
     with tab_excel:
         page_excel()
+    with tab_tr:
+        ui_translate.render(pdf_bytes, up.name, total, secret)
 
 
 tab_from, tab_to = st.tabs(["📄 PDF → Word / Excel, tách trang", "🖨 Word / Excel → PDF"])

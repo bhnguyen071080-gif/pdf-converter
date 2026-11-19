@@ -27,6 +27,11 @@ TEXT_W = PAGE_W - MARGIN_L - MARGIN_R
 EMU_IN = 914400
 
 
+import contextvars
+
+EAST = contextvars.ContextVar("east_font", default=None)  # font Đông Á (Nhật/Trung) khi dựng bản dịch
+
+
 def _set_font(run_or_style, name=FONT, size=None, bold=None):
     f = run_or_style.font
     f.name = name
@@ -34,7 +39,7 @@ def _set_font(run_or_style, name=FONT, size=None, bold=None):
         run_or_style.element, "get_or_add_rPr") else run_or_style.element.rPr
     rfonts = rpr.rFonts if rpr.rFonts is not None else rpr._add_rFonts()
     for a in ("w:ascii", "w:hAnsi", "w:eastAsia", "w:cs"):
-        rfonts.set(qn(a), name)
+        rfonts.set(qn(a), (EAST.get() or name) if a == "w:eastAsia" else name)
     if size:
         f.size = Pt(size)
     if bold is not None:

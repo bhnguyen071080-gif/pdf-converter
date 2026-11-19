@@ -179,7 +179,8 @@ def extract_table_scan(gray, region, hmask, vmask, pool) -> dict | None:
     lines_mask = cv2.dilate(cv2.bitwise_or(hmask, vmask), np.ones((5, 5), np.uint8))
     boxes = [(xs[c], ys[r], xs[c + cs], ys[r + rs]) for r, c, rs, cs in spans]
     crops_l = [_cell_crop(gray, lines_mask, b) for b in boxes]
-    texts = list(pool.map(_ocr_cell, crops_l))
+    lang = ou.cur_lang()
+    texts = list(pool.map(lambda c: _in_lang(lang, _ocr_cell, c), crops_l))
     nr, nc = len(ys) - 1, len(xs) - 1
     cells = [["" for _ in range(nc)] for _ in range(nr)]
     crops = {}
@@ -196,7 +197,7 @@ def extract_table_scan(gray, region, hmask, vmask, pool) -> dict | None:
 
 
 # ---------------------------------------------------------------- xử lý trang scan
-def process_scan_page(page, pool, dpi: int = 300, img=None) -> dict:
+def process_scan_page(page, pool, dpi: int = 300, img=None, figures: bool = False) -> dict:
     """img: ảnh trang đã dựng sẵn (dùng khi xử lý song song; dựng ảnh phải làm ở luồng chính vì PyMuPDF không an toàn đa luồng)."""
     if img is None:
         img = ou.render_page(page, dpi)
@@ -204,11 +205,15 @@ def process_scan_page(page, pool, dpi: int = 300, img=None) -> dict:
     gray = ou.gray_of(img)
     hmask, vmask = _line_masks(binary)  # cấu trúc bảng dò trên ảnh nhị phân
     regions = find_table_regions(binary, hmask, vmask)
+    real_regions = list(regions)
     items = []
     text_img = gray.copy()
     for reg in regions:
         t = extract_table_scan(gray, reg, hmask, vmask, pool)
         x, y, w, h = reg
+        if figures and t and _mostly_empty(t):  # khung bản vẽ bị nhận nhầm là bảng -> xử lý như hình
+            real_regions.remove(reg)
+            continue
         text_img[max(0, y - 4): y + h + 4, max(0, x - 4): x + w + 4] = 255  # che bảng, OCR phần còn lại
         if t:
             items.append(t)
@@ -225,8 +230,20 @@ def process_scan_page(page, pool, dpi: int = 300, img=None) -> dict:
         items.append({"type": "text", "y": ln["y"], "x": x0, "w": x1 - x0, "h": ln["h"],
                       "conf": round(ln["conf"]), "segments": segs})
     items += marks
+    if figures:  # hình vẽ giữ nguyên (R28): chữ OCR nằm trong hình bị bỏ vì đã nằm trong ảnh
+        import figure_utils as fu
+        figs = fu.figures_from_scan_page(img, binary, lines, real_regions, marks, hmask, vmask)
+        items = [i for i in items if not (i["type"] == "text" and any(
+            fu.inside((i["x"], i["y"], i.get("w", 0) or 1, i.get("h", 40)), f) for f in figs))] + figs
     items.sort(key=lambda i: (i["y"], i["x"]))
     return {"method": "ocr", "angle": round(angle, 2), "items": items, "width": binary.shape[1]}
+
+
+def _mostly_empty(t: dict) -> bool:
+    """Bảng gần như không có chữ (≤2 ô có nội dung và <40% số ô) -> khung bản vẽ, không phải bảng thật."""
+    cells = [c for row in t["cells"] for c in row]
+    n = sum(bool(c.strip()) for c in cells)
+    return not cells or (n <= 2 and n / len(cells) < 0.4)
 
 
 def split_segments(words, gap: int = 130):
@@ -256,7 +273,7 @@ def _fix_cid(text: str, pm_page, bbox) -> str:
     return fixed if fixed and "(cid:" not in fixed else text
 
 
-def process_text_page(page_idx: int, pdf_bytes: bytes, scale: float = 300 / 72) -> dict:
+def process_text_page(page_idx: int, pdf_bytes: bytes, scale: float = 300 / 72, figures: bool = False) -> dict:
     """Trang có lớp chữ: dùng pdfplumber; tọa độ nhân scale để cùng hệ với trang scan."""
     import pdfplumber
     items = []
@@ -264,6 +281,9 @@ def process_text_page(page_idx: int, pdf_bytes: bytes, scale: float = 300 / 72) 
     with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
         pg = pdf.pages[page_idx]
         tables = pg.find_tables()
+        if figures:  # bản vẽ kỹ thuật (có đường cong / chỉ 1 cột) hay bị nhận nhầm là bảng -> coi là hình
+            import figure_utils as fu
+            tables = [t for t in tables if not fu.table_is_drawing(pm_page, t.bbox, len(t.rows[0].cells) if t.rows else 0)]
         bboxes = [t.bbox for t in tables]
         for t in tables:
             rows = t.extract()
@@ -281,8 +301,14 @@ def process_text_page(page_idx: int, pdf_bytes: bytes, scale: float = 300 / 72) 
             for b in bboxes))
         for ln in rest.extract_text_lines():
             items.append({"type": "text", "y": int(ln["top"] * scale), "x": int(ln["x0"] * scale),
+                          "xr": int(ln["x1"] * scale), "h": int((ln["bottom"] - ln["top"]) * scale),
                           "segments": [(int(ln["x0"] * scale), ou.clean_text(
                               _fix_cid(ln["text"], pm_page, (ln["x0"], ln["top"], ln["x1"], ln["bottom"]))))]})
+    if figures:
+        import figure_utils as fu
+        figs = fu.figures_from_text_page(pm_page, bboxes, scale)
+        items = [i for i in items if not (i["type"] == "text" and any(
+            fu.inside((i["x"], i["y"], 1, 40), f, 0.5) for f in figs))] + figs
     items.sort(key=lambda i: (i["y"], i["x"]))
     return {"method": "text", "angle": 0.0, "items": items, "width": int(595 * scale)}
 
@@ -293,9 +319,19 @@ def _page_workers() -> int:
     return max(1, min(4, os.cpu_count() or 2))
 
 
-def convert_pdf(pdf_bytes: bytes, pages: list[int] | None = None, progress=None, force_ocr: bool = False):
+def _in_lang(lang: str, fn, *a):
+    """Chạy fn trong luồng con với đúng ngôn ngữ OCR của yêu cầu."""
+    ou.set_lang(lang)
+    return fn(*a)
+
+
+def convert_pdf(pdf_bytes: bytes, pages: list[int] | None = None, progress=None, force_ocr: bool = False,
+                lang: str | None = None, figures: bool = False):
     """Trả (kind, [PageResult]). pages: chỉ số trang từ 0; None = tất cả.
     Các trang xử lý song song (kết quả vẫn đúng thứ tự trang); thuật toán từng trang không đổi."""
+    if lang:
+        ou.set_lang(lang)  # 'vi','en','de','ja','zh-CN','zh-TW'
+    ocr_lang = ou.cur_lang()
     doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
     kind = ou.detect_pdf_kind(doc)
     pages = list(range(len(doc))) if pages is None else pages
@@ -306,9 +342,9 @@ def convert_pdf(pdf_bytes: bytes, pages: list[int] | None = None, progress=None,
         futs = {}
         for i in pages:
             if use_text[i]:
-                futs[i] = page_pool.submit(process_text_page, i, pdf_bytes)
+                futs[i] = page_pool.submit(_in_lang, ocr_lang, process_text_page, i, pdf_bytes, 300 / 72, figures)
             else:  # dựng ảnh ở luồng chính, phần nặng (khử nghiêng, OCR) chạy song song
-                futs[i] = page_pool.submit(process_scan_page, None, cell_pool, 300, ou.render_page(doc[i], 300))
+                futs[i] = page_pool.submit(_in_lang, ocr_lang, process_scan_page, None, cell_pool, 300, ou.render_page(doc[i], 300), figures)
             while len([f for f in futs.values() if not f.done()]) >= _page_workers() + 1:
                 time.sleep(0.05)  # giới hạn số ảnh lớn nằm chờ trong bộ nhớ
         for i in pages:

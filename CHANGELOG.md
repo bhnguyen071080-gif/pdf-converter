@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-11-19 – Dịch tài liệu kỹ thuật (R25–R29)
+**Thêm:** tab "🌐 Dịch tài liệu" (`ui_translate.py`); `translate_utils.py` (MyMemory → Google dự phòng, cắt đoạn ≤400 byte, bộ nhớ đệm, thuật ngữ, bắt lỗi hết hạn mức); `glossary.py` (khoảng 100 thuật ngữ thiết bị cảng Anh/Đức → Việt); `translate_doc.py` (gộp dòng thành đoạn, dựng Word có hình giữ nguyên, font Đông Á cho Nhật/Trung); `figure_utils.py` (nhận hình vẽ/ảnh trên trang có lớp chữ và trang scan); `ocr_utils.py` nhận ngôn ngữ OCR theo từng yêu cầu (vie/eng/deu/jpn/chi_sim/chi_tra), `tessdata/` thêm 4 model "best" (+49 MB); `packages.txt` thêm fonts-noto-cjk.
+**Sửa nhỏ:** `pdf_to_excel.convert_pdf` thêm tham số `lang`, `figures` (mặc định như cũ); `pdf_to_word._set_font` đặt được font Đông Á; trang có lớp chữ ghi thêm `xr`, `h` cho dòng chữ.
+**Kiểm:** 17 bài hồi quy đạt (thêm 4 bài dịch: cắt đoạn/thuật ngữ/đệm/chuyển dịch vụ; hình + bảng + Word tiếng Việt; font CJK; OCR tiếng Đức); AppTest tab dịch với dịch vụ giả. Dịch vụ thật chưa gọi được từ môi trường phát triển (mạng bị chặn) → kiểm trên bản online.
+**Ảnh hưởng:** các chức năng cũ không đổi.
+
 ## 2026-11-18 – Tăng tốc PDF → Excel/Word (không đổi kết quả)
 **Sửa:** `pdf_to_excel.py`: `convert_pdf` xử lý nhiều trang song song (tối đa 4 trang cùng lúc, theo số nhân CPU), dựng ảnh trang ở luồng chính vì PyMuPDF không an toàn đa luồng; thanh tiến trình ghi "Xong trang n – x/y". `process_scan_page` nhận thêm ảnh dựng sẵn.
 **Đo thử:** file mẫu 8 trang scan, máy 2 nhân: 146 giây → 108 giây (-26%); nội dung 8/8 trang giống hệt bản trước. Máy nhiều nhân hơn sẽ nhanh hơn nữa.

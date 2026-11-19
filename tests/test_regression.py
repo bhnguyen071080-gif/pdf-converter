@@ -270,6 +270,124 @@ def test_roundtrip_word_pdf_word_text():
     assert SAMPLE.split(" – ")[0] in txt, txt
 
 
+# ------------------------------------------------------------ dịch (R25–R29), dùng dịch vụ GIẢ (không gọi Internet)
+def _fake_http(calls):
+    def fake(url, params):
+        calls.append(url)
+        if "mymemory" in url:
+            return {"responseData": {"translatedText": "VI " + params["q"]}, "responseStatus": 200}
+        return [[["GG " + params["q"], params["q"]]]]
+    return fake
+
+
+def _make_en_pdf() -> bytes:
+    """PDF tiếng Anh: đoạn văn, bản vẽ vector (có đường tròn), ảnh raster, bảng 3 cột."""
+    from PIL import Image, ImageDraw
+    from reportlab.lib import colors
+    from reportlab.platypus import Table, TableStyle
+    buf = io.BytesIO()
+    c = canvas.Canvas(buf, pagesize=A4)
+    W, H = A4
+    c.setFont("Helvetica", 11)
+    for i, l in enumerate(["The rubber tyred gantry crane must be inspected every 250 hours,",
+                           "Check the wire rope and the hydraulic cylinder before operation."]):
+        c.drawString(50, H - 100 - 15 * i, l)
+    c.rect(120, H - 330, 300, 160)
+    c.circle(200, H - 210, 25)
+    c.line(120, H - 330, 420, H - 170)
+    im = Image.new("RGB", (300, 180), (230, 240, 255))
+    ImageDraw.Draw(im).ellipse((40, 30, 260, 150), outline=(200, 0, 0), width=6)
+    b = io.BytesIO()
+    im.save(b, "PNG")
+    c.drawImage(__import__("reportlab.lib.utils", fromlist=["ImageReader"]).ImageReader(io.BytesIO(b.getvalue())),
+                150, H - 560, width=240, height=144)
+    t = Table([["No.", "Part", "Qty"], ["1", "Brake pad", "4"], ["2", "Fuel filter", "2"]], colWidths=[40, 200, 60])
+    t.setStyle(TableStyle([("GRID", (0, 0), (-1, -1), 0.8, colors.black)]))
+    t.wrapOn(c, W, H)
+    t.drawOn(c, 50, H - 700)
+    c.save()
+    return buf.getvalue()
+
+
+def test_translate_chunks_glossary_cache_fallback():
+    import translate_utils as tu
+    long = " ".join(f"Sentence number {i} is here." for i in range(60))
+    ch = tu.split_chunks(long, 400)
+    assert all(len(c.encode()) <= 400 for c in ch) and " ".join(ch) == long
+    assert all(len(c.encode()) <= 400 for c in tu.split_chunks("漢" * 500, 400))
+    g = tu.apply_glossary("Check the safe working load and SWL.", "en", "vi")
+    assert g.count("(SWL)") == 2 and "tải trọng làm việc an toàn" in g  # không thay lồng nhau
+    calls: list = []
+    tu.HTTP = _fake_http(calls)
+    cache: dict = {}
+    out, st = tu.translate_strings(["Brake pad", "12/05/2026", "Brake pad"], "en", "vi", "mymemory", cache=cache)
+    assert out[1] == "12/05/2026" and out[0] == out[2] and len(calls) == 1
+    out2, st2 = tu.translate_strings(["Brake pad"], "en", "vi", "mymemory", cache=cache)
+    assert len(calls) == 1 and st2.cached == 1  # bộ nhớ đệm
+    # MyMemory hết hạn mức -> chuyển sang Google
+    def quota(url, params):
+        if "mymemory" in url:
+            return {"responseData": {"translatedText": "MYMEMORY WARNING: YOU USED ALL"}, "responseStatus": 429}
+        return [[["GG " + params["q"], params["q"]]]]
+    tu.HTTP = quota
+    out3, st3 = tu.translate_strings(["Spreader"], "en", "vi", "auto")
+    assert out3[0].startswith("GG ") and st3.fallback
+    try:
+        tu.translate_strings(["Spreader"], "en", "vi", "mymemory")
+        raise AssertionError("phải báo hết hạn mức")
+    except tu.QuotaExceeded:
+        pass
+
+
+def test_translate_figures_text_pdf_and_docx_vietnamese():
+    import translate_doc as td
+    import translate_utils as tu
+    kind, res = pe.convert_pdf(_make_en_pdf(), lang="en", figures=True)
+    kinds = [i["type"] + ("-fig" if i.get("figure") else "") for i in res[0]["items"]]
+    assert kinds.count("image-fig") == 2, kinds       # bản vẽ vector (không bị nhầm là bảng) + ảnh raster
+    assert kinds.count("table") == 1                    # bảng thật vẫn là bảng
+    pages, strings = td.extract(res)
+    assert any("hydraulic cylinder" in s["src"] and "250 hours" in s["src"] for s in strings)  # gộp dòng thành đoạn
+    tu.HTTP = _fake_http([])
+    out, _ = tu.translate_strings([s["src"] for s in strings], "en", "vi", "mymemory")
+    assert any("cẩu khung bánh lốp (RTG)" in o for o in out)  # thuật ngữ
+    for s, o in zip(strings, out):
+        s["dst"] = o + " – Đặng Thị Hương"
+    from docx import Document
+    d = Document(io.BytesIO(td.build_docx(pages, strings, "vi")))
+    text = "\n".join(p.text for p in d.paragraphs)
+    assert "Đặng Thị Hương" in text and len(d.inline_shapes) == 2 and len(d.tables) == 1
+
+
+def test_translate_cjk_docx_font_and_ocr_languages():
+    import translate_doc as td
+    import translate_utils as tu
+    assert ou.OCR_LANGS["de"].startswith("deu") and ou.OCR_LANGS["ja"] == "jpn" and ou.OCR_LANGS["zh-CN"] == "chi_sim"
+    kind, res = pe.convert_pdf(_make_en_pdf(), lang="en", figures=False)
+    pages, strings = td.extract(res)
+    for s in strings:
+        s["dst"] = "检查钢丝绳"
+    xml = __import__("zipfile").ZipFile(io.BytesIO(td.build_docx(pages, strings, "zh-CN"))).read("word/document.xml").decode()
+    assert 'w:eastAsia="SimSun"' in xml and "检查钢丝绳" in xml
+
+
+def test_ocr_german_scan_umlauts():
+    """OCR tiếng Đức nhận được ü, ä (model deu đi kèm dự án)."""
+    from PIL import Image, ImageDraw, ImageFont
+    im = Image.new("RGB", (1654, 400), "white")
+    ImageDraw.Draw(im).text((100, 150), "Das Drahtseil für die Prüfung der Tragfähigkeit", font=ImageFont.truetype(
+        str(ROOT / "fonts" / "DejaVuSans.ttf"), 44), fill="black")
+    b = io.BytesIO()
+    im.save(b, "PNG")
+    doc = pymupdf.open()
+    pg = doc.new_page(width=595, height=842)
+    pg.insert_image(pymupdf.Rect(0, 0, 595, 143), stream=b.getvalue())
+    kind, res = pe.convert_pdf(doc.tobytes(), lang="de")
+    txt = " ".join(t for it in res[0]["items"] if it["type"] == "text" for _, t in it["segments"])
+    assert "für" in txt and "Prüfung" in txt, txt
+    assert ou.cur_lang() in ("deu+eng", "vie+eng")
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_"):
